@@ -1,0 +1,22 @@
+# Operating System files
+.DS_Store
+Thumbs.db
+
+# IDE files
+.idea
+.vscode/*
+*.sublime-project
+*.sublime-workspace
+.project
+.settings*
+
+# Build output
+dist/
+*.zip
+
+# Logs
+*.log
+
+# Environment
+.env
+.direnv/
