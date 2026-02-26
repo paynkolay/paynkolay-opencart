@@ -1,0 +1,22 @@
+FROM php:8.2-apache
+
+RUN apt-get update && apt-get install -y \
+    libpng-dev libjpeg-dev libfreetype6-dev libzip-dev libonig-dev unzip curl mariadb-client \
+    && docker-php-ext-configure gd --with-freetype --with-jpeg \
+    && docker-php-ext-install gd mysqli pdo_mysql zip mbstring \
+    && a2enmod rewrite \
+    && rm -rf /var/lib/apt/lists/*
+
+# Download OpenCart 4.0.2.3
+RUN curl -L https://github.com/opencart/opencart/archive/refs/tags/4.0.2.3.tar.gz -o /tmp/opencart.tar.gz \
+    && tar -xzf /tmp/opencart.tar.gz -C /tmp \
+    && cp -r /tmp/opencart-4.0.2.3/upload/* /var/www/html/ \
+    && cp /var/www/html/config-dist.php /var/www/html/config.php \
+    && cp /var/www/html/admin/config-dist.php /var/www/html/admin/config.php \
+    && chown -R www-data:www-data /var/www/html \
+    && rm -rf /tmp/opencart* /tmp/opencart.tar.gz
+
+COPY docker/opencart-4.x/entrypoint.sh /usr/local/bin/entrypoint.sh
+RUN chmod +x /usr/local/bin/entrypoint.sh
+
+ENTRYPOINT ["entrypoint.sh"]
