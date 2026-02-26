@@ -1,0 +1,89 @@
+services:
+  db:
+    image: mariadb:11
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_USER: opencart
+      MYSQL_PASSWORD: opencart
+    volumes:
+      - db_data:/var/lib/mysql
+      - ./docker/init.sql:/docker-entrypoint-initdb.d/init.sql
+
+  opencart20:
+    build:
+      context: .
+      dockerfile: docker/opencart-2.0/Dockerfile
+    ports:
+      - '8020:80'
+    volumes:
+      # Mount plugin files directly into OpenCart extension paths
+      - ./opencart-2.0/admin/controller/payment:/var/www/html/admin/controller/payment
+      - ./opencart-2.0/admin/language/english/payment:/var/www/html/admin/language/english/payment
+      - ./opencart-2.0/admin/view/template/extension/payment:/var/www/html/admin/view/template/extension/payment
+      - ./opencart-2.0/admin/view/image/payment:/var/www/html/admin/view/image/payment
+      - ./opencart-2.0/catalog/controller/payment:/var/www/html/catalog/controller/payment
+      - ./opencart-2.0/catalog/language/english/payment:/var/www/html/catalog/language/english/payment
+      - ./opencart-2.0/catalog/model/payment:/var/www/html/catalog/model/payment
+      - ./opencart-2.0/catalog/view/theme/default/template/payment:/var/www/html/catalog/view/theme/default/template/payment
+    depends_on:
+      - db
+
+  opencart23:
+    build:
+      context: .
+      dockerfile: docker/opencart-2.3/Dockerfile
+    ports:
+      - '8023:80'
+    volumes:
+      - ./opencart-2.3/admin/controller/extension/payment:/var/www/html/admin/controller/extension/payment
+      - ./opencart-2.3/admin/language/en-gb/extension/payment:/var/www/html/admin/language/en-gb/extension/payment
+      - ./opencart-2.3/admin/view/template/extension/payment:/var/www/html/admin/view/template/extension/payment
+      - ./opencart-2.3/admin/view/image/payment:/var/www/html/admin/view/image/payment
+      - ./opencart-2.3/catalog/controller/extension/payment:/var/www/html/catalog/controller/extension/payment
+      - ./opencart-2.3/catalog/language/en-gb/extension/payment:/var/www/html/catalog/language/en-gb/extension/payment
+      - ./opencart-2.3/catalog/model/extension/payment:/var/www/html/catalog/model/extension/payment
+      - ./opencart-2.3/catalog/view/theme/default/extension/payment:/var/www/html/catalog/view/theme/default/extension/payment
+    depends_on:
+      - db
+
+  opencart3x:
+    build:
+      context: .
+      dockerfile: docker/opencart-3.x/Dockerfile
+    ports:
+      - '8030:80'
+    volumes:
+      - ./opencart-3.x/admin/controller/extension/payment:/var/www/html/admin/controller/extension/payment
+      - ./opencart-3.x/admin/language/en-gb/extension/payment:/var/www/html/admin/language/en-gb/extension/payment
+      - ./opencart-3.x/admin/view/template/extension/payment:/var/www/html/admin/view/template/extension/payment
+      - ./opencart-3.x/admin/view/image/payment:/var/www/html/admin/view/image/payment
+      - ./opencart-3.x/catalog/controller/extension/payment:/var/www/html/catalog/controller/extension/payment
+      - ./opencart-3.x/catalog/language/en-gb/extension/payment:/var/www/html/catalog/language/en-gb/extension/payment
+      - ./opencart-3.x/catalog/model/extension/payment:/var/www/html/catalog/model/extension/payment
+      - ./opencart-3.x/catalog/view/theme/default/template/extension/payment:/var/www/html/catalog/view/theme/default/template/extension/payment
+      - ./opencart-3.x/catalog/view/javascript/nkolaypos:/var/www/html/catalog/view/javascript/nkolaypos
+    depends_on:
+      - db
+
+  opencart4x:
+    build:
+      context: .
+      dockerfile: docker/opencart-4.x/Dockerfile
+    ports:
+      - '8040:80'
+    volumes:
+      # OC 4.x uses extension/<vendor>/payment/ structure
+      - ./opencart-4.x/admin/controller/payment:/var/www/html/extension/nkolay/admin/controller/payment
+      - ./opencart-4.x/admin/language/en-gb/payment:/var/www/html/extension/nkolay/admin/language/en-gb/payment
+      - ./opencart-4.x/admin/view/template/payment:/var/www/html/extension/nkolay/admin/view/template/payment
+      - ./opencart-4.x/admin/view/image/payment:/var/www/html/extension/nkolay/admin/view/image/payment
+      - ./opencart-4.x/catalog/controller/payment:/var/www/html/extension/nkolay/catalog/controller/payment
+      - ./opencart-4.x/catalog/language/en-gb/payment:/var/www/html/extension/nkolay/catalog/language/en-gb/payment
+      - ./opencart-4.x/catalog/model/payment:/var/www/html/extension/nkolay/catalog/model/payment
+      - ./opencart-4.x/catalog/view/template/payment:/var/www/html/extension/nkolay/catalog/view/template/payment
+      - ./opencart-4.x/catalog/view/template/javascript/nkolaypos:/var/www/html/extension/nkolay/catalog/view/template/javascript/nkolaypos
+    depends_on:
+      - db
+
+volumes:
+  db_data:
