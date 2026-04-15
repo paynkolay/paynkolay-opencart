@@ -115,6 +115,17 @@ INSERT INTO oc_setting (store_id, code, `key`, value, serialized)
 SELECT 0, 'payment_nkolaypos', 'payment_nkolaypos_order_status_id', '5', 0 FROM dual
 WHERE NOT EXISTS (SELECT 1 FROM oc_setting WHERE `key`='payment_nkolaypos_order_status_id');
 SQL
+
+# Grant admin permissions
+mysql -h db -u opencart -popencart opencart23 -e "
+UPDATE oc_user_group
+SET permission = JSON_ARRAY_APPEND(
+  JSON_ARRAY_APPEND(permission, '\$.access', 'extension/payment/nkolaypos'),
+  '\$.modify', 'extension/payment/nkolaypos'
+)
+WHERE user_group_id = 1
+AND JSON_SEARCH(permission, 'one', 'extension/payment/nkolaypos', NULL, '\$.access') IS NULL;
+" 2>/dev/null || true
 echo "PayNKolay plugin registered."
 
 wait $APACHE_PID

@@ -128,6 +128,19 @@ INSERT INTO oc_setting (store_id, code, `key`, value, serialized)
 SELECT 0, 'nkolaypos', 'nkolaypos_order_status_id', '5', 0 FROM dual
 WHERE NOT EXISTS (SELECT 1 FROM oc_setting WHERE `key`='nkolaypos_order_status_id');
 SQL
+
+# Grant admin permissions (serialized PHP format in OC 2.0)
+php -r "
+\$pdo = new PDO('mysql:host=db;dbname=opencart20', 'opencart', 'opencart');
+\$row = \$pdo->query(\"SELECT permission FROM oc_user_group WHERE user_group_id=1\")->fetch();
+\$perms = unserialize(\$row['permission']);
+if (!in_array('payment/nkolaypos', \$perms['access'] ?? [])) {
+    \$perms['access'][] = 'payment/nkolaypos';
+    \$perms['modify'][] = 'payment/nkolaypos';
+    \$stmt = \$pdo->prepare('UPDATE oc_user_group SET permission=? WHERE user_group_id=1');
+    \$stmt->execute([serialize(\$perms)]);
+}
+" 2>/dev/null || true
 echo "PayNKolay plugin registered."
 
 wait $APACHE_PID
