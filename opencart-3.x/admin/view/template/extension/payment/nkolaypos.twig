@@ -4,7 +4,8 @@
     <div class="container-fluid">
       <div class="pull-right">
         <button type="submit" form="form-payment" data-toggle="tooltip" title="{{ button_save }}" class="btn btn-primary"><i class="fa fa-save"></i></button>
-        <a href="{{ cancel }}" data-toggle="tooltip" title="{{ button_cancel }}" class="btn btn-default"><i class="fa fa-reply"></i></a></div>
+        <a href="{{ cancel }}" data-toggle="tooltip" title="{{ button_cancel }}" class="btn btn-default"><i class="fa fa-reply"></i></a>
+      </div>
       <h1>{{ heading_title }}</h1>
       <ul class="breadcrumb">
         {% for breadcrumb in breadcrumbs %}
@@ -15,7 +16,8 @@
   </div>
   <div class="container-fluid">
     {% if error_warning %}
-    <div class="alert alert-danger alert-dismissible"><i class="fa fa-exclamation-circle"></i> {{ error_warning }}
+    <div class="alert alert-danger alert-dismissible">
+      <i class="fa fa-exclamation-circle"></i> {{ error_warning }}
       <button type="button" class="close" data-dismiss="alert">&times;</button>
     </div>
     {% endif %}
@@ -29,44 +31,22 @@
             <label class="col-sm-2 control-label" for="input-sx">{{ entry_sx }}</label>
             <div class="col-sm-10">
               <input type="text" name="payment_nkolaypos_sx" value="{{ payment_nkolaypos_sx }}" placeholder="{{ entry_sx }}" id="input-sx" class="form-control" />
-              {% if error_sx %}
-              <div class="text-danger">{{ error_sx }}</div>
-              {% endif %}
+              {% if error_sx %}<div class="text-danger">{{ error_sx }}</div>{% endif %}
             </div>
           </div>
           <div class="form-group required">
             <label class="col-sm-2 control-label" for="input-secret">{{ entry_secret }}</label>
             <div class="col-sm-10">
               <input type="text" name="payment_nkolaypos_secret" value="{{ payment_nkolaypos_secret }}" placeholder="{{ entry_secret }}" id="input-secret" class="form-control" />
-              {% if error_secret %}
-              <div class="text-danger">{{ error_secret }}</div>
-              {% endif %}
+              {% if error_secret %}<div class="text-danger">{{ error_secret }}</div>{% endif %}
             </div>
           </div>
-
           <div class="form-group">
-            <label class="col-sm-2 control-label" for="input-mode">Form Türü</label>
-            <div class="col-sm-10">
-              <select name="payment_nkolaypos_form_turu" id="input-mode" class="form-control">
-                <option value="2" selected="selected">Pay N Kolay Ödeme</option>
-              </select>
-            </div>
-          </div>
-
-          <div class="form-group">
-            <label class="col-sm-2 control-label" for="input-mode">Test Mode</label>
+            <label class="col-sm-2 control-label" for="input-mode">{{ entry_mode }}</label>
             <div class="col-sm-10">
               <select name="payment_nkolaypos_mode" id="input-mode" class="form-control">
-                {% if payment_nkolaypos_mode == '0' %}
-                <option value="0" selected="selected">Pasif</option>
-                {% else %}
-                <option value="0">Pasif</option>
-                {% endif %}
-                {% if payment_nkolaypos_mode == '1' %}
-                <option value="1" selected="selected">Aktif</option>
-                {% else %}
-                <option value="1">Aktif</option>
-                {% endif %}>
+                <option value="0" {% if payment_nkolaypos_mode == '0' %}selected{% endif %}>{{ text_disabled }}</option>
+                <option value="1" {% if payment_nkolaypos_mode == '1' %}selected{% endif %}>{{ text_enabled }}</option>
               </select>
             </div>
           </div>
@@ -74,16 +54,8 @@
             <label class="col-sm-2 control-label" for="input-type">{{ entry_type }}</label>
             <div class="col-sm-10">
               <select name="payment_nkolaypos_type" id="input-type" class="form-control">
-                {% if payment_nkolaypos_type == '3D' %}
-                <option value="3D" selected="selected">{{ text_pay }}</option>
-                {% else %}
-                <option value="3D">{{ text_pay }}</option>
-                {% endif %}
-                {% if payment_nkolaypos_type == 'Normal' %}
-                <option value="Normal" selected="selected">{{ text_card }}</option>
-                {% else %}
-                <option value="Normal">{{ text_card }}</option>
-                {% endif %}>
+                <option value="3D" {% if payment_nkolaypos_type == '3D' %}selected{% endif %}>{{ text_3d }}</option>
+                <option value="Normal" {% if payment_nkolaypos_type == 'Normal' %}selected{% endif %}>{{ text_normal }}</option>
               </select>
             </div>
           </div>
@@ -98,11 +70,7 @@
             <div class="col-sm-10">
               <select name="payment_nkolaypos_order_status_id" id="input-order-status" class="form-control">
                 {% for order_status in order_statuses %}
-                {% if order_status.order_status_id == payment_nkolaypos_order_status_id %}
-                <option value="{{ order_status.order_status_id }}" selected="selected">{{ order_status.name }}</option>
-                {% else %}
-                <option value="{{ order_status.order_status_id }}">{{ order_status.name }}</option>
-                {% endif %}
+                <option value="{{ order_status.order_status_id }}" {% if order_status.order_status_id == payment_nkolaypos_order_status_id %}selected{% endif %}>{{ order_status.name }}</option>
                 {% endfor %}
               </select>
             </div>
@@ -113,11 +81,7 @@
               <select name="payment_nkolaypos_geo_zone_id" id="input-geo-zone" class="form-control">
                 <option value="0">{{ text_all_zones }}</option>
                 {% for geo_zone in geo_zones %}
-                {% if geo_zone.geo_zone_id == payment_nkolaypos_geo_zone_id %}
-                <option value="{{ geo_zone.geo_zone_id }}" selected="selected">{{ geo_zone.name }}</option>
-                {% else %}
-                <option value="{{ geo_zone.geo_zone_id }}">{{ geo_zone.name }}</option>
-                {% endif %}
+                <option value="{{ geo_zone.geo_zone_id }}" {% if geo_zone.geo_zone_id == payment_nkolaypos_geo_zone_id %}selected{% endif %}>{{ geo_zone.name }}</option>
                 {% endfor %}
               </select>
             </div>
@@ -126,13 +90,8 @@
             <label class="col-sm-2 control-label" for="input-status">{{ entry_status }}</label>
             <div class="col-sm-10">
               <select name="payment_nkolaypos_status" id="input-status" class="form-control">
-                {% if payment_nkolaypos_status %}
-                <option value="1" selected="selected">{{ text_enabled }}</option>
-                <option value="0">{{ text_disabled }}</option>
-                {% else %}
-                <option value="1">{{ text_enabled }}</option>
-                <option value="0" selected="selected">{{ text_disabled }}</option>
-                {% endif %}
+                <option value="1" {% if payment_nkolaypos_status == '1' %}selected{% endif %}>{{ text_enabled }}</option>
+                <option value="0" {% if payment_nkolaypos_status != '1' %}selected{% endif %}>{{ text_disabled }}</option>
               </select>
             </div>
           </div>
