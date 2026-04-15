@@ -41,8 +41,13 @@ class ControllerPaymentNkolayPos extends Controller
             'nkolaypos_type', 'nkolaypos_total', 'nkolaypos_order_status_id',
             'nkolaypos_geo_zone_id', 'nkolaypos_status', 'nkolaypos_sort_order',
         ];
+        $defaults = [
+            'nkolaypos_sx'     => '118591467|bScbGDYCtPf7SS1N6PQ6/+58rFhW1WpsWINqvkJFaJlu6bMH2tgPKDQtjeA5vClpzJP24uA0vx7OX53cP3SgUspa4EvYix+1C3aXe++8glUvu9Oyyj3v300p5NP7ro/9K57Zcw==',
+            'nkolaypos_secret' => '_YckdxUbv4vrnMUZ6VQsr',
+            'nkolaypos_mode'   => '1',
+        ];
         foreach ($settings as $key) {
-            $data[$key] = $this->request->post[$key] ?? $this->config->get($key);
+            $data[$key] = $this->request->post[$key] ?? $this->config->get($key) ?? ($defaults[$key] ?? '');
         }
 
         $this->load->model('localisation/order_status');

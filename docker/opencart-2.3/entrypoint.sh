@@ -114,6 +114,7 @@ WHERE NOT EXISTS (SELECT 1 FROM oc_setting WHERE `key`='payment_nkolaypos_type')
 INSERT INTO oc_setting (store_id, code, `key`, value, serialized)
 SELECT 0, 'payment_nkolaypos', 'payment_nkolaypos_order_status_id', '5', 0 FROM dual
 WHERE NOT EXISTS (SELECT 1 FROM oc_setting WHERE `key`='payment_nkolaypos_order_status_id');
+
 SQL
 
 # Grant admin permissions
