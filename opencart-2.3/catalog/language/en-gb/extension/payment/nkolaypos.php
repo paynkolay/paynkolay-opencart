@@ -1,4 +1,4 @@
 <?php
-if (!defined("VERSION")) exit;
-// Text
-$_['text_title'] = 'Kredi Kartı ile Öde';
+if (!defined('VERSION')) exit;
+
+$_['text_title'] = 'Pay with Credit Card (PayNKolay)';
