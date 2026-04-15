@@ -1,4 +1,14 @@
 services:
+  # ──────────────────────────────────────────────
+  # Landing page — http://localhost:8000
+  # ──────────────────────────────────────────────
+  landing:
+    image: nginx:alpine
+    ports:
+      - "8000:80"
+    volumes:
+      - ./landing:/usr/share/nginx/html:ro
+
   db:
     image: mariadb:11
     environment:
@@ -9,6 +19,9 @@ services:
       - db_data:/var/lib/mysql
       - ./docker/init.sql:/docker-entrypoint-initdb.d/init.sql
 
+  # ──────────────────────────────────────────────
+  # OpenCart 2.0.3.1 — http://localhost:8020
+  # ──────────────────────────────────────────────
   opencart20:
     build:
       context: .
@@ -16,7 +29,6 @@ services:
     ports:
       - '8020:80'
     volumes:
-      # Mount plugin files directly into OpenCart extension paths
       - ./opencart-2.0/admin/controller/payment:/var/www/html/admin/controller/payment
       - ./opencart-2.0/admin/language/english/payment:/var/www/html/admin/language/english/payment
       - ./opencart-2.0/admin/view/template/extension/payment:/var/www/html/admin/view/template/extension/payment
@@ -25,9 +37,13 @@ services:
       - ./opencart-2.0/catalog/language/english/payment:/var/www/html/catalog/language/english/payment
       - ./opencart-2.0/catalog/model/payment:/var/www/html/catalog/model/payment
       - ./opencart-2.0/catalog/view/theme/default/template/payment:/var/www/html/catalog/view/theme/default/template/payment
+      - ./opencart-2.0/system/library/paynkolay.php:/var/www/html/system/library/paynkolay.php
     depends_on:
       - db
 
+  # ──────────────────────────────────────────────
+  # OpenCart 2.3.0.2 — http://localhost:8023
+  # ──────────────────────────────────────────────
   opencart23:
     build:
       context: .
@@ -42,10 +58,14 @@ services:
       - ./opencart-2.3/catalog/controller/extension/payment:/var/www/html/catalog/controller/extension/payment
       - ./opencart-2.3/catalog/language/en-gb/extension/payment:/var/www/html/catalog/language/en-gb/extension/payment
       - ./opencart-2.3/catalog/model/extension/payment:/var/www/html/catalog/model/extension/payment
-      - ./opencart-2.3/catalog/view/theme/default/extension/payment:/var/www/html/catalog/view/theme/default/extension/payment
+      - ./opencart-2.3/catalog/view/theme/default/extension/payment:/var/www/html/catalog/view/theme/default/template/extension/payment
+      - ./opencart-2.3/system/library/paynkolay.php:/var/www/html/system/library/paynkolay.php
     depends_on:
       - db
 
+  # ──────────────────────────────────────────────
+  # OpenCart 3.0.3.9 — http://localhost:8030
+  # ──────────────────────────────────────────────
   opencart3x:
     build:
       context: .
@@ -61,10 +81,13 @@ services:
       - ./opencart-3.x/catalog/language/en-gb/extension/payment:/var/www/html/catalog/language/en-gb/extension/payment
       - ./opencart-3.x/catalog/model/extension/payment:/var/www/html/catalog/model/extension/payment
       - ./opencart-3.x/catalog/view/theme/default/template/extension/payment:/var/www/html/catalog/view/theme/default/template/extension/payment
-      - ./opencart-3.x/catalog/view/javascript/nkolaypos:/var/www/html/catalog/view/javascript/nkolaypos
+      - ./opencart-3.x/system/library/paynkolay.php:/var/www/html/system/library/paynkolay.php
     depends_on:
       - db
 
+  # ──────────────────────────────────────────────
+  # OpenCart 4.0.2.3 — http://localhost:8040
+  # ──────────────────────────────────────────────
   opencart4x:
     build:
       context: .
@@ -72,7 +95,6 @@ services:
     ports:
       - '8040:80'
     volumes:
-      # OC 4.x uses extension/<vendor>/payment/ structure
       - ./opencart-4.x/admin/controller/payment:/var/www/html/extension/nkolay/admin/controller/payment
       - ./opencart-4.x/admin/language/en-gb/payment:/var/www/html/extension/nkolay/admin/language/en-gb/payment
       - ./opencart-4.x/admin/view/template/payment:/var/www/html/extension/nkolay/admin/view/template/payment
@@ -81,7 +103,8 @@ services:
       - ./opencart-4.x/catalog/language/en-gb/payment:/var/www/html/extension/nkolay/catalog/language/en-gb/payment
       - ./opencart-4.x/catalog/model/payment:/var/www/html/extension/nkolay/catalog/model/payment
       - ./opencart-4.x/catalog/view/template/payment:/var/www/html/extension/nkolay/catalog/view/template/payment
-      - ./opencart-4.x/catalog/view/template/javascript/nkolaypos:/var/www/html/extension/nkolay/catalog/view/template/javascript/nkolaypos
+      - ./opencart-4.x/system/library/paynkolay.php:/var/www/html/extension/nkolay/system/library/paynkolay.php
+      - ./opencart-4.x/install.json:/var/www/html/extension/nkolay/install.json
     depends_on:
       - db
 
