@@ -1,8 +1,8 @@
 {
-    "name": "Pay N Kolay",
+    "name": "PayNKolay",
     "code": "nkolay",
     "license": "GPL",
-    "version": "1.0.0",
-    "author": "nkolay",
+    "version": "2.0.0",
+    "author": "PayNKolay",
     "link": "https://paynkolay.com.tr/"
 }
