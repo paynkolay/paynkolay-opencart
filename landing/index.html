@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PayNKolay OpenCart Plugin Dev</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f5f5f5; padding: 40px 20px; }
+        h1 { text-align: center; margin-bottom: 8px; color: #1a1a1a; }
+        p.sub { text-align: center; color: #666; margin-bottom: 32px; }
+        .grid { max-width: 900px; margin: 0 auto; display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px; }
+        .card { background: #fff; border-radius: 8px; padding: 20px; border: 1px solid #e0e0e0; }
+        .card h2 { font-size: 16px; margin-bottom: 4px; }
+        .card .version { font-size: 13px; color: #888; margin-bottom: 12px; }
+        .card .links { display: flex; gap: 8px; flex-wrap: wrap; }
+        .card a { display: inline-block; padding: 6px 14px; border-radius: 4px; text-decoration: none; font-size: 13px; font-weight: 500; }
+        a.store { background: #e8f5e9; color: #2e7d32; }
+        a.admin { background: #e3f2fd; color: #1565c0; }
+        a.store:hover { background: #c8e6c9; }
+        a.admin:hover { background: #bbdefb; }
+        .card .creds { margin-top: 10px; font-size: 12px; color: #999; font-family: monospace; }
+        .note { max-width: 900px; margin: 24px auto 0; font-size: 13px; color: #888; text-align: center; }
+    </style>
+</head>
+<body>
+    <h1>PayNKolay OpenCart Plugin Dev</h1>
+    <p class="sub">Plugin files are live-mounted &mdash; edit locally, refresh browser</p>
+    <div class="grid">
+        <div class="card">
+            <h2>OpenCart 2.0</h2>
+            <div class="version">2.0.3.1 &middot; :8020</div>
+            <div class="links">
+                <a class="store" href="http://localhost:8020" target="_blank">Store</a>
+                <a class="admin" href="http://localhost:8020/admin" target="_blank">Admin</a>
+            </div>
+            <div class="creds">admin / admin</div>
+        </div>
+        <div class="card">
+            <h2>OpenCart 2.3</h2>
+            <div class="version">2.3.0.2 &middot; :8023</div>
+            <div class="links">
+                <a class="store" href="http://localhost:8023" target="_blank">Store</a>
+                <a class="admin" href="http://localhost:8023/admin" target="_blank">Admin</a>
+            </div>
+            <div class="creds">admin / admin</div>
+        </div>
+        <div class="card">
+            <h2>OpenCart 3.x</h2>
+            <div class="version">3.0.3.9 &middot; :8030</div>
+            <div class="links">
+                <a class="store" href="http://localhost:8030" target="_blank">Store</a>
+                <a class="admin" href="http://localhost:8030/admin" target="_blank">Admin</a>
+            </div>
+            <div class="creds">admin / admin</div>
+        </div>
+        <div class="card">
+            <h2>OpenCart 4.x</h2>
+            <div class="version">4.0.2.3 &middot; :8040</div>
+            <div class="links">
+                <a class="store" href="http://localhost:8040" target="_blank">Store</a>
+                <a class="admin" href="http://localhost:8040/admin" target="_blank">Admin</a>
+            </div>
+            <div class="creds">admin / admin</div>
+        </div>
+    </div>
+    <p class="note">Landing page at :8000 &middot; MariaDB shared on internal network</p>
+</body>
+</html>
