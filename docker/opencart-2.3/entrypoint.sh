@@ -13,17 +13,74 @@ echo "Database ready."
 if [ ! -f /var/www/html/.installed ]; then
   echo "Installing OpenCart 2.3..."
 
-  php /var/www/html/install/cli_install.php install \
-    --db_hostname db \
-    --db_username opencart \
-    --db_password opencart \
-    --db_database opencart23 \
-    --db_driver mysqli \
-    --db_port 3306 \
-    --username admin \
-    --password admin \
-    --email admin@test.com \
-    --http_server "http://localhost:8023/" 2>&1 || true
+  # Write configs manually (CLI installer fails on mcrypt check)
+  cat > /var/www/html/config.php << 'PHPEOF'
+<?php
+define('HTTP_SERVER', 'http://localhost:8023/');
+define('HTTPS_SERVER', 'http://localhost:8023/');
+define('DIR_APPLICATION', '/var/www/html/catalog/');
+define('DIR_SYSTEM', '/var/www/html/system/');
+define('DIR_IMAGE', '/var/www/html/image/');
+define('DIR_STORAGE', '/var/www/html/system/storage/');
+define('DIR_LANGUAGE', '/var/www/html/catalog/language/');
+define('DIR_TEMPLATE', '/var/www/html/catalog/view/theme/');
+define('DIR_CONFIG', '/var/www/html/system/config/');
+define('DIR_CACHE', '/var/www/html/system/storage/cache/');
+define('DIR_DOWNLOAD', '/var/www/html/system/storage/download/');
+define('DIR_LOGS', '/var/www/html/system/storage/logs/');
+define('DIR_MODIFICATION', '/var/www/html/system/storage/modification/');
+define('DIR_UPLOAD', '/var/www/html/system/storage/upload/');
+define('DB_DRIVER', 'mysqli');
+define('DB_HOSTNAME', 'db');
+define('DB_USERNAME', 'opencart');
+define('DB_PASSWORD', 'opencart');
+define('DB_DATABASE', 'opencart23');
+define('DB_PORT', '3306');
+define('DB_PREFIX', 'oc_');
+PHPEOF
+
+  cat > /var/www/html/admin/config.php << 'PHPEOF'
+<?php
+define('HTTP_SERVER', 'http://localhost:8023/admin/');
+define('HTTPS_SERVER', 'http://localhost:8023/admin/');
+define('HTTP_CATALOG', 'http://localhost:8023/');
+define('HTTPS_CATALOG', 'http://localhost:8023/');
+define('DIR_APPLICATION', '/var/www/html/admin/');
+define('DIR_SYSTEM', '/var/www/html/system/');
+define('DIR_IMAGE', '/var/www/html/image/');
+define('DIR_STORAGE', '/var/www/html/system/storage/');
+define('DIR_CATALOG', '/var/www/html/catalog/');
+define('DIR_LANGUAGE', '/var/www/html/admin/language/');
+define('DIR_TEMPLATE', '/var/www/html/admin/view/template/');
+define('DIR_CONFIG', '/var/www/html/system/config/');
+define('DIR_CACHE', '/var/www/html/system/storage/cache/');
+define('DIR_DOWNLOAD', '/var/www/html/system/storage/download/');
+define('DIR_LOGS', '/var/www/html/system/storage/logs/');
+define('DIR_MODIFICATION', '/var/www/html/system/storage/modification/');
+define('DIR_UPLOAD', '/var/www/html/system/storage/upload/');
+define('DB_DRIVER', 'mysqli');
+define('DB_HOSTNAME', 'db');
+define('DB_USERNAME', 'opencart');
+define('DB_PASSWORD', 'opencart');
+define('DB_DATABASE', 'opencart23');
+define('DB_PORT', '3306');
+define('DB_PREFIX', 'oc_');
+PHPEOF
+
+  # Import database schema
+  mysql -h db -u opencart -popencart opencart23 < /var/www/html/install/opencart.sql 2>/dev/null || true
+
+  # Create admin user
+  mysql -h db -u opencart -popencart opencart23 -e "
+    DELETE FROM oc_user WHERE username='admin';
+    INSERT INTO oc_user SET user_id=1, user_group_id=1, username='admin',
+      password=SHA1(CONCAT('', 'admin')), salt='',
+      firstname='Admin', lastname='Admin', email='admin@test.com',
+      status=1, date_added=NOW();
+  " 2>/dev/null || true
+
+  # Create required storage directories
+  mkdir -p /var/www/html/system/storage/{cache,download,logs,modification,upload,session}
 
   rm -rf /var/www/html/install
   chown -R www-data:www-data /var/www/html

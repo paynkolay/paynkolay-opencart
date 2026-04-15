@@ -34,8 +34,8 @@ fi
 # Register PayNKolay plugin (idempotent — runs every startup)
 echo "Registering PayNKolay plugin..."
 mysql -h db -u opencart -popencart opencart4x << 'SQL' 2>/dev/null || true
-INSERT INTO oc_extension (type, code)
-SELECT 'payment', 'nkolay' FROM dual
+INSERT INTO oc_extension (extension, type, code)
+SELECT 'nkolay', 'payment', 'nkolay' FROM dual
 WHERE NOT EXISTS (SELECT 1 FROM oc_extension WHERE type='payment' AND code='nkolay');
 
 INSERT INTO oc_setting (store_id, code, `key`, value, serialized)
