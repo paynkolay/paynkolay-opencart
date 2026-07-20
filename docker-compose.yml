@@ -86,6 +86,31 @@ services:
       - db
 
   # ──────────────────────────────────────────────
+  # OpenCart 3.0.2.0 on PHP 7.2 — http://localhost:8032
+  # (era-typical stack for merchants on OC < 3.0.3.7)
+  # ──────────────────────────────────────────────
+  opencart302:
+    build:
+      context: .
+      dockerfile: docker/opencart-3.0.2/Dockerfile
+    ports:
+      - '8032:80'
+    # Per-file mounts: folder mounts would hide core payment extensions
+    # (cod, free_checkout) and fatal the checkout payment-method step.
+    volumes:
+      - ./opencart-3.x/admin/controller/extension/payment/nkolaypos.php:/var/www/html/admin/controller/extension/payment/nkolaypos.php
+      - ./opencart-3.x/admin/language/en-gb/extension/payment/nkolaypos.php:/var/www/html/admin/language/en-gb/extension/payment/nkolaypos.php
+      - ./opencart-3.x/admin/view/template/extension/payment/nkolaypos.twig:/var/www/html/admin/view/template/extension/payment/nkolaypos.twig
+      - ./opencart-3.x/admin/view/image/payment/nkolay.png:/var/www/html/admin/view/image/payment/nkolay.png
+      - ./opencart-3.x/catalog/controller/extension/payment/nkolaypos.php:/var/www/html/catalog/controller/extension/payment/nkolaypos.php
+      - ./opencart-3.x/catalog/language/en-gb/extension/payment/nkolaypos.php:/var/www/html/catalog/language/en-gb/extension/payment/nkolaypos.php
+      - ./opencart-3.x/catalog/model/extension/payment/nkolaypos.php:/var/www/html/catalog/model/extension/payment/nkolaypos.php
+      - ./opencart-3.x/catalog/view/theme/default/template/extension/payment/nkolaypos.twig:/var/www/html/catalog/view/theme/default/template/extension/payment/nkolaypos.twig
+      - ./opencart-3.x/system/library/paynkolay.php:/var/www/html/system/library/paynkolay.php
+    depends_on:
+      - db
+
+  # ──────────────────────────────────────────────
   # OpenCart 4.0.2.3 — http://localhost:8040
   # ──────────────────────────────────────────────
   opencart4x:

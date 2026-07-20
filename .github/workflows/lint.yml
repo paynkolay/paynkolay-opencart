@@ -1,0 +1,24 @@
+name: Lint
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  php-lint:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        php: ['7.0', '8.3']
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+
+      - name: Syntax-check all PHP files
+        run: |
+          set -e
+          find opencart-2.0 opencart-2.3 opencart-3.x opencart-4.x -name '*.php' -print0 \
+            | xargs -0 -n1 php -l

@@ -104,7 +104,7 @@ class PayNKolayClient
      *
      * Hash: sx|clientRefCode|amount|successUrl|failUrl|rnd|csCustomerKey
      */
-    public function createPayment(array $params): object
+    public function createPayment(array $params)
     {
         $rnd = date('d-m-Y H:i:s');
 
@@ -157,7 +157,7 @@ class PayNKolayClient
     /**
      * Complete a 3D Secure payment.
      */
-    public function completePayment(string $referenceCode): object
+    public function completePayment(string $referenceCode)
     {
         return $this->post(
             $this->getBaseUrl() . '/Vpos/v1/CompletePayment',
@@ -171,7 +171,7 @@ class PayNKolayClient
     /**
      * Get installment options for a card number and amount.
      */
-    public function getInstallments(string $cardNumber, string $amount, bool $validateCard = false): object
+    public function getInstallments(string $cardNumber, string $amount, bool $validateCard = false)
     {
         return $this->post(
             $this->getBaseUrl() . '/Vpos/Payment/PaymentInstallments',
@@ -233,7 +233,7 @@ class PayNKolayClient
      *
      * @param array $params Required: referenceCode, type (cancel|refund), amount, trxDate (YYYY.MM.DD)
      */
-    public function cancelOrRefund(array $params): object
+    public function cancelOrRefund(array $params)
     {
         $hash = $this->computeHash([
             $this->sxCancel,
@@ -263,7 +263,7 @@ class PayNKolayClient
      *
      * Hash: sx|startDate|endDate|clientRefCode
      */
-    public function listPayments(string $startDate, string $endDate, string $clientRefCode = ''): object
+    public function listPayments(string $startDate, string $endDate, string $clientRefCode = '')
     {
         $hash = $this->computeHash([
             $this->sxList,
@@ -320,19 +320,26 @@ class PayNKolayClient
      *
      * @param array $cookieNames Cookie name prefixes to fix (e.g., ['OCSESSID', 'PHPSESSID'])
      */
-    public static function fixCookieSameSite(array $cookieNames = ['PHPSESSID', 'OCSESSID']): void
+    public static function fixCookieSameSite(array $cookieNames = ['PHPSESSID', 'OCSESSID'])
     {
         foreach ($_COOKIE as $name => $value) {
             foreach ($cookieNames as $prefix) {
                 if (stripos($name, $prefix) === 0) {
-                    setcookie($name, $value, [
-                        'expires'  => time() + 86400,
-                        'path'     => '/',
-                        'domain'   => $_SERVER['SERVER_NAME'] ?? '',
-                        'samesite' => 'None',
-                        'secure'   => true,
-                        'httponly'  => true,
-                    ]);
+                    if (PHP_VERSION_ID >= 70300) {
+                        setcookie($name, $value, [
+                            'expires'  => time() + 86400,
+                            'path'     => '/',
+                            'domain'   => $_SERVER['SERVER_NAME'] ?? '',
+                            'samesite' => 'None',
+                            'secure'   => true,
+                            'httponly' => true,
+                        ]);
+                    } else {
+                        // PHP < 7.3 setcookie() has no samesite option (the array
+                        // signature warns and sets nothing) — smuggle the attribute
+                        // through the path parameter instead.
+                        setcookie($name, $value, time() + 86400, '/; SameSite=None', $_SERVER['SERVER_NAME'] ?? '', true, true);
+                    }
                 }
             }
         }
@@ -350,7 +357,7 @@ class PayNKolayClient
 
     // ─── HTTP ────────────────────────────────────────────────────────────────────
 
-    private function post(string $url, array $data): object
+    private function post(string $url, array $data)
     {
         $ch = curl_init();
         curl_setopt_array($ch, [
