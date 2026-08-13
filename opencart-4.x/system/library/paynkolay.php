@@ -9,6 +9,9 @@
  */
 class PayNKolayClient
 {
+    /** Plugin release version; keep in sync with the GitHub release tag. */
+    const PLUGIN_VERSION = '1.1.0';
+
     const PROD_BASE_URL = 'https://paynkolay.nkolayislem.com.tr';
     const TEST_BASE_URL = 'https://paynkolaytest.nkolayislem.com.tr';
 
