@@ -9,7 +9,13 @@ class ControllerExtensionPaymentNkolayPos extends Controller
         PayNKolayClient::fixCookieSameSite(['OCSESSID', 'PHPSESSID']);
 
         $this->load->model('checkout/order');
-        $order = $this->model_checkout_order->getOrder($this->session->data['order_id']);
+        // One-page checkouts (e.g. Journal 3) may load this template outside the
+        // stock confirm step; render nothing instead of erroring without an order.
+        $orderId = isset($this->session->data['order_id']) ? $this->session->data['order_id'] : 0;
+        $order = $orderId ? $this->model_checkout_order->getOrder($orderId) : false;
+        if (!$order) {
+            return '';
+        }
 
         $amount = $this->currency->format(
             $order['total'], $order['currency_code'], $order['currency_value'], false
