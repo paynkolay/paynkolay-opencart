@@ -17,19 +17,15 @@ class ControllerPaymentNkolayPos extends Controller
             return '';
         }
 
-        // Charge in the order's currency when the gateway supports it (TRY/USD/EUR);
-        // otherwise convert the total to TRY, which the gateway assumes by default.
+        // Charge in the order's own currency; the gateway would treat a bare amount as TRY.
         $currencyNumber = PayNKolayClient::currencyNumber($order['currency_code']);
-        if ($currencyNumber !== '') {
-            $amount = $this->currency->format(
-                $order['total'], $order['currency_code'], $order['currency_value'], false
-            );
-        } elseif ($this->currency->has('TRY')) {
-            $amount = $this->currency->format($order['total'], 'TRY', '', false);
-            $currencyNumber = PayNKolayClient::CURRENCY_NUMBERS['TRY'];
-        } else {
+        if ($currencyNumber === '') {
             return '';
         }
+
+        $amount = $this->currency->format(
+            $order['total'], $order['currency_code'], $order['currency_value'], false
+        );
 
         $callbackUrl = $this->url->link('payment/nkolaypos/callback', '', true);
 

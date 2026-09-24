@@ -18,8 +18,21 @@ class PayNKolayClient
     const RESPONSE_SUCCESS = '2';
     const RESPONSE_ERROR   = '0';
 
-    /** ISO 4217 numeric codes accepted in currencyCode; the gateway charges TRY when it is omitted. */
-    const CURRENCY_NUMBERS = ['TRY' => '949', 'USD' => '840', 'EUR' => '978'];
+    /**
+     * ISO 4217 alpha => numeric codes sent as currencyCode. The gateway charges TRY
+     * when currencyCode is omitted and rejects currencies the merchant isn't enabled for.
+     */
+    const CURRENCY_NUMBERS = [
+        'TRY' => '949', 'USD' => '840', 'EUR' => '978', 'GBP' => '826', 'CHF' => '756',
+        'JPY' => '392', 'CNY' => '156', 'RUB' => '643', 'AUD' => '036', 'CAD' => '124',
+        'NZD' => '554', 'SEK' => '752', 'NOK' => '578', 'DKK' => '208', 'PLN' => '985',
+        'CZK' => '203', 'HUF' => '348', 'RON' => '946', 'BGN' => '975', 'UAH' => '980',
+        'GEL' => '981', 'AZN' => '944', 'KZT' => '398', 'SAR' => '682', 'AED' => '784',
+        'QAR' => '634', 'KWD' => '414', 'BHD' => '048', 'OMR' => '512', 'JOD' => '400',
+        'ILS' => '376', 'EGP' => '818', 'IQD' => '368', 'INR' => '356', 'KRW' => '410',
+        'SGD' => '702', 'HKD' => '344', 'ZAR' => '710', 'BRL' => '986', 'MXN' => '484',
+    ];
+
 
     private $sx;
     private $sxList;
@@ -355,7 +368,7 @@ class PayNKolayClient
 
     /**
      * Map an ISO 4217 alpha code (e.g. an OpenCart currency code) to the numeric
-     * currencyCode the gateway expects. Returns '' for unsupported currencies.
+     * currencyCode the gateway expects. Returns '' for codes not in CURRENCY_NUMBERS.
      */
     public static function currencyNumber(string $isoCode): string
     {
