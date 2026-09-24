@@ -1,11 +1,11 @@
 services:
   # ──────────────────────────────────────────────
-  # Landing page — http://localhost:8000
+  # Landing page — http://localhost:8080
   # ──────────────────────────────────────────────
   landing:
     image: nginx:alpine
     ports:
-      - "8000:80"
+      - "8080:80"
     volumes:
       - ./landing:/usr/share/nginx/html:ro
 

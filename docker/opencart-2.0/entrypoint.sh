@@ -101,8 +101,8 @@ PHPEOF
   echo "OpenCart 2.0 installed! http://localhost:8020"
 fi
 
-# Register PayNKolay plugin (idempotent — runs every startup)
-echo "Registering PayNKolay plugin..."
+# Register paynkolay plugin (idempotent — runs every startup)
+echo "Registering paynkolay plugin..."
 mysql --skip-ssl -h db -u opencart -popencart opencart20 << 'SQL' || true
 INSERT INTO oc_extension (type, code)
 SELECT 'payment', 'nkolaypos' FROM dual
@@ -142,6 +142,6 @@ if (!in_array('payment/nkolaypos', \$perms['access'] ?? [])) {
     \$stmt->execute([serialize(\$perms)]);
 }
 " 2>/dev/null || true
-echo "PayNKolay plugin registered."
+echo "paynkolay plugin registered."
 
 wait $APACHE_PID

@@ -1,8 +1,8 @@
 <?php
 /**
- * PayNKolay Payment Gateway PHP SDK
+ * paynkolay Payment Gateway PHP SDK
  *
- * Single-file client for the PayNKolay virtual POS API.
+ * Single-file client for the paynkolay virtual POS API.
  * Uses hashDatav2 (SHA-512, pipe-separated) for all hash operations.
  *
  * @see https://paynkolay.com.tr/entegrasyon
@@ -62,7 +62,7 @@ class PayNKolayClient
     // ─── Redirect flow (hosted payment page at /Vpos) ────────────────────────────
 
     /**
-     * Build hidden form fields for redirect to PayNKolay hosted payment page.
+     * Build hidden form fields for redirect to paynkolay hosted payment page.
      *
      * Hash: sx|clientRefCode|amount|successUrl|failUrl|rnd|csCustomerKey
      *
@@ -190,7 +190,7 @@ class PayNKolayClient
     // ─── Callback verification ───────────────────────────────────────────────────
 
     /**
-     * Verify the hash from a PayNKolay callback (POST to successUrl/failUrl).
+     * Verify the hash from a paynkolay callback (POST to successUrl/failUrl).
      *
      * Hash: MERCHANT_NO|REFERENCE_CODE|AUTH_CODE|RESPONSE_CODE|USE_3D|RND|INSTALLMENT|AUTHORIZATION_AMOUNT
      */

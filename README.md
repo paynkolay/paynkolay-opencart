@@ -67,7 +67,7 @@ docker compose up -d --build
 
 | URL | Version | Notes |
 |---|---|---|
-| http://localhost:8000 | — | Landing page |
+| http://localhost:8080 | — | Landing page |
 | http://localhost:8020 | OpenCart 2.0.3.1 | |
 | http://localhost:8023 | OpenCart 2.3.0.2 | |
 | http://localhost:8030 | OpenCart 3.0.3.9 | PHP 8.1 |

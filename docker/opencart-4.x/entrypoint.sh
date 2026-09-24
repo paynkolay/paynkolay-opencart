@@ -31,8 +31,8 @@ if [ ! -f /var/www/html/.installed ]; then
   echo "OpenCart 4.x installed! http://localhost:8040"
 fi
 
-# Register PayNKolay plugin (idempotent — runs every startup)
-echo "Registering PayNKolay plugin..."
+# Register paynkolay plugin (idempotent — runs every startup)
+echo "Registering paynkolay plugin..."
 mysql --skip-ssl -h db -u opencart -popencart opencart4x << 'SQL' || true
 INSERT INTO oc_extension (extension, type, code)
 SELECT 'nkolay', 'payment', 'nkolay' FROM dual
@@ -69,6 +69,6 @@ SET permission = JSON_ARRAY_APPEND(
 WHERE user_group_id = 1
 AND JSON_SEARCH(permission, 'one', 'extension/nkolay/payment/nkolay', NULL, '\$.access') IS NULL;
 " 2>/dev/null || true
-echo "PayNKolay plugin registered."
+echo "paynkolay plugin registered."
 
 wait $APACHE_PID
