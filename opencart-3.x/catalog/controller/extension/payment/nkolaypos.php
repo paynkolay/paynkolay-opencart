@@ -36,7 +36,7 @@ class ControllerExtensionPaymentNkolayPos extends Controller
             'successUrl'    => $callbackUrl,
             'failUrl'       => $callbackUrl,
             'use3D'         => $this->config->get('payment_nkolaypos_type') == '3D' ? 'true' : 'false',
-            'platform'      => 'Opencart3x',
+            'platform'      => PayNKolayClient::platformTag('Opencart3x', VERSION),
         ]);
 
         $this->load->language('extension/payment/nkolaypos');

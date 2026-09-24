@@ -39,7 +39,7 @@ class Nkolay extends \Opencart\System\Engine\Controller
             'successUrl'    => $callbackUrl,
             'failUrl'       => $callbackUrl,
             'use3D'         => $this->config->get('payment_nkolaypos_type') == '3D' ? 'true' : 'false',
-            'platform'      => 'Opencart4x',
+            'platform'      => \PayNKolayClient::platformTag('Opencart4x', VERSION),
         ]);
 
         $this->load->language('extension/nkolay/payment/nkolay');

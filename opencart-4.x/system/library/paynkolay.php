@@ -18,6 +18,9 @@ class PayNKolayClient
     const RESPONSE_SUCCESS = '2';
     const RESPONSE_ERROR   = '0';
 
+    /** Longest ECOMM_PLATFORM the gateway accepts; 121+ chars rejects the whole payment (AB0001). */
+    const ECOMM_PLATFORM_MAX = 120;
+
     /**
      * ISO 4217 alpha => numeric codes sent as currencyCode. The gateway charges TRY
      * when currencyCode is omitted and rejects currencies the merchant isn't enabled for.
@@ -112,7 +115,7 @@ class PayNKolayClient
             'transactionType' => $params['transactionType'] ?? 'SALES',
             'hashDatav2'      => $hash,
             'currencyCode'    => $params['currencyCode'] ?? '',
-            'ECOMM_PLATFORM'  => $params['platform'] ?? '',
+            'ECOMM_PLATFORM'  => substr((string) ($params['platform'] ?? ''), 0, self::ECOMM_PLATFORM_MAX),
         ];
     }
 
@@ -154,7 +157,7 @@ class PayNKolayClient
             'rnd'             => $rnd,
             'hashDatav2'      => $hash,
             'environment'     => 'API',
-            'ECOMM_PLATFORM'  => $params['platform'] ?? '',
+            'ECOMM_PLATFORM'  => substr((string) ($params['platform'] ?? ''), 0, self::ECOMM_PLATFORM_MAX),
         ];
 
         if (isset($params['EncodedValue'])) {
@@ -365,6 +368,17 @@ class PayNKolayClient
     }
 
     // ─── Utilities ───────────────────────────────────────────────────────────────
+
+    /**
+     * Build the ECOMM_PLATFORM tag reported with each payment, e.g.
+     * "Opencart4x;plugin=1.2.0;oc=4.0.2.3;php=8.2.29". Distro PHP_VERSION suffixes are dropped.
+     */
+    public static function platformTag(string $platform, string $hostVersion): string
+    {
+        $php = PHP_MAJOR_VERSION . '.' . PHP_MINOR_VERSION . '.' . PHP_RELEASE_VERSION;
+        $tag = $platform . ';plugin=' . self::PLUGIN_VERSION . ';oc=' . $hostVersion . ';php=' . $php;
+        return substr($tag, 0, self::ECOMM_PLATFORM_MAX);
+    }
 
     /**
      * Map an ISO 4217 alpha code (e.g. an OpenCart currency code) to the numeric
