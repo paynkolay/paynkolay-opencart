@@ -33,7 +33,7 @@ fi
 
 # Register PayNKolay plugin (idempotent — runs every startup)
 echo "Registering PayNKolay plugin..."
-mysql -h db -u opencart -popencart opencart3x << 'SQL' 2>/dev/null || true
+mysql --skip-ssl -h db -u opencart -popencart opencart3x << 'SQL' || true
 INSERT INTO oc_extension (type, code)
 SELECT 'payment', 'nkolaypos' FROM dual
 WHERE NOT EXISTS (SELECT 1 FROM oc_extension WHERE type='payment' AND code='nkolaypos');
@@ -60,7 +60,7 @@ WHERE NOT EXISTS (SELECT 1 FROM oc_setting WHERE `key`='payment_nkolaypos_order_
 SQL
 
 # Grant admin permissions
-mysql -h db -u opencart -popencart opencart3x -e "
+mysql --skip-ssl -h db -u opencart -popencart opencart3x -e "
 UPDATE oc_user_group
 SET permission = JSON_ARRAY_APPEND(
   JSON_ARRAY_APPEND(permission, '\$.access', 'extension/payment/nkolaypos'),

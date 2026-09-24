@@ -83,11 +83,11 @@ PHPEOF
 
   # Import database schema
   if [ -f /var/www/html/install/opencart.sql ]; then
-    mysql -h db -u opencart -popencart opencart20 < /var/www/html/install/opencart.sql 2>/dev/null || true
+    mysql --skip-ssl -h db -u opencart -popencart opencart20 < /var/www/html/install/opencart.sql 2>/dev/null || true
   fi
 
   # Create admin user
-  mysql -h db -u opencart -popencart opencart20 -e "
+  mysql --skip-ssl -h db -u opencart -popencart opencart20 -e "
     DELETE FROM oc_user WHERE username='admin';
     INSERT INTO oc_user SET user_id=1, user_group_id=1, username='admin',
       password=SHA1(CONCAT('', 'admin')), salt='',
@@ -103,7 +103,7 @@ fi
 
 # Register PayNKolay plugin (idempotent — runs every startup)
 echo "Registering PayNKolay plugin..."
-mysql -h db -u opencart -popencart opencart20 << 'SQL' 2>/dev/null || true
+mysql --skip-ssl -h db -u opencart -popencart opencart20 << 'SQL' || true
 INSERT INTO oc_extension (type, code)
 SELECT 'payment', 'nkolaypos' FROM dual
 WHERE NOT EXISTS (SELECT 1 FROM oc_extension WHERE type='payment' AND code='nkolaypos');
