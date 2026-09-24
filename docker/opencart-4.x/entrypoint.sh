@@ -33,7 +33,7 @@ fi
 
 # Register paynkolay plugin (idempotent — runs every startup)
 echo "Registering paynkolay plugin..."
-mysql --skip-ssl -h db -u opencart -popencart opencart4x << 'SQL' || true
+mysql --skip-ssl --default-character-set=utf8mb4 -h db -u opencart -popencart opencart4x << 'SQL' || true
 INSERT INTO oc_extension (extension, type, code)
 SELECT 'nkolay', 'payment', 'nkolay' FROM dual
 WHERE NOT EXISTS (SELECT 1 FROM oc_extension WHERE type='payment' AND code='nkolay');
@@ -57,6 +57,14 @@ WHERE NOT EXISTS (SELECT 1 FROM oc_setting WHERE `key`='payment_nkolaypos_type')
 INSERT INTO oc_setting (store_id, code, `key`, value, serialized)
 SELECT 0, 'payment_nkolay', 'payment_nkolaypos_order_status_id', '5', 0 FROM dual
 WHERE NOT EXISTS (SELECT 1 FROM oc_setting WHERE `key`='payment_nkolaypos_order_status_id');
+-- Turkish lira as the store currency (paynkolay charges in TRY)
+INSERT INTO oc_currency (title, code, symbol_left, symbol_right, decimal_place, value, status, date_modified)
+SELECT 'Türk Lirası', 'TRY', '', '₺', '2', 1.00000000, 1, NOW() FROM dual
+WHERE NOT EXISTS (SELECT 1 FROM oc_currency WHERE code='TRY');
+UPDATE oc_currency SET value=1.00000000, status=1 WHERE code='TRY';
+UPDATE oc_currency SET status=0 WHERE code<>'TRY';
+UPDATE oc_setting SET value='TRY' WHERE store_id=0 AND `key`='config_currency';
+
 SQL
 
 # Grant admin permissions
