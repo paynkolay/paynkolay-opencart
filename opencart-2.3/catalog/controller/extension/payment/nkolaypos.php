@@ -17,15 +17,26 @@ class ControllerExtensionPaymentNkolayPos extends Controller
             return '';
         }
 
-        $amount = $this->currency->format(
-            $order['total'], $order['currency_code'], $order['currency_value'], false
-        );
+        // Charge in the order's currency when the gateway supports it (TRY/USD/EUR);
+        // otherwise convert the total to TRY, which the gateway assumes by default.
+        $currencyNumber = PayNKolayClient::currencyNumber($order['currency_code']);
+        if ($currencyNumber !== '') {
+            $amount = $this->currency->format(
+                $order['total'], $order['currency_code'], $order['currency_value'], false
+            );
+        } elseif ($this->currency->has('TRY')) {
+            $amount = $this->currency->format($order['total'], 'TRY', '', false);
+            $currencyNumber = PayNKolayClient::CURRENCY_NUMBERS['TRY'];
+        } else {
+            return '';
+        }
 
         $callbackUrl = $this->url->link('extension/payment/nkolaypos/callback', '', true);
 
         $formData = $client->buildRedirectFormData([
             'clientRefCode' => PayNKolayClient::buildClientRefCode('Opencart23', $this->session->data['order_id']),
             'amount'        => $amount,
+            'currencyCode'  => $currencyNumber,
             'successUrl'    => $callbackUrl,
             'failUrl'       => $callbackUrl,
             'use3D'         => $this->config->get('payment_nkolaypos_type') == '3D' ? 'true' : 'false',

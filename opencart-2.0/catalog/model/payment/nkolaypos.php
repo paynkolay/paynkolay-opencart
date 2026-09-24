@@ -24,6 +24,13 @@ class ModelPaymentNkolayPos extends Model
             $status = false;
         }
 
+        // Hide the method when the cart currency can't be charged: not TRY/USD/EUR and no TRY to convert to.
+        require_once(DIR_SYSTEM . 'library/paynkolay.php');
+        $currency = isset($this->session->data['currency']) ? $this->session->data['currency'] : $this->config->get('config_currency');
+        if (PayNKolayClient::currencyNumber((string)$currency) === '' && !$this->currency->has('TRY')) {
+            $status = false;
+        }
+
         if (!$status) return [];
 
         return [

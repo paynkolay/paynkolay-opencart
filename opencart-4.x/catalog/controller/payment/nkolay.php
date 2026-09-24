@@ -19,9 +19,19 @@ class Nkolay extends \Opencart\System\Engine\Controller
             return '';
         }
 
-        $amount = $this->currency->format(
-            $order['total'], $order['currency_code'], $order['currency_value'], false
-        );
+        // Charge in the order's currency when the gateway supports it (TRY/USD/EUR);
+        // otherwise convert the total to TRY, which the gateway assumes by default.
+        $currencyNumber = \PayNKolayClient::currencyNumber($order['currency_code']);
+        if ($currencyNumber !== '') {
+            $amount = $this->currency->format(
+                $order['total'], $order['currency_code'], $order['currency_value'], false
+            );
+        } elseif ($this->currency->has('TRY')) {
+            $amount = $this->currency->format($order['total'], 'TRY', '', false);
+            $currencyNumber = \PayNKolayClient::CURRENCY_NUMBERS['TRY'];
+        } else {
+            return '';
+        }
 
         $sep = version_compare(VERSION, '4.0.2.0', '>=') ? '.' : '|';
         $callbackUrl = $this->url->link('extension/nkolay/payment/nkolay' . $sep . 'callback');
@@ -29,6 +39,7 @@ class Nkolay extends \Opencart\System\Engine\Controller
         $formData = $client->buildRedirectFormData([
             'clientRefCode' => \PayNKolayClient::buildClientRefCode('Opencart4x', $this->session->data['order_id']),
             'amount'        => $amount,
+            'currencyCode'  => $currencyNumber,
             'successUrl'    => $callbackUrl,
             'failUrl'       => $callbackUrl,
             'use3D'         => $this->config->get('payment_nkolaypos_type') == '3D' ? 'true' : 'false',

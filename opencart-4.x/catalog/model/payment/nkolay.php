@@ -28,6 +28,13 @@ class Nkolay extends \Opencart\System\Engine\Model
             $status = $query->num_rows > 0;
         }
 
+        // Hide the method when the cart currency can't be charged: not TRY/USD/EUR and no TRY to convert to.
+        require_once(DIR_EXTENSION . 'nkolay/system/library/paynkolay.php');
+        $currency = $this->session->data['currency'] ?? $this->config->get('config_currency');
+        if (\PayNKolayClient::currencyNumber((string)$currency) === '' && !$this->currency->has('TRY')) {
+            $status = false;
+        }
+
         if (!$status) {
             return [];
         }

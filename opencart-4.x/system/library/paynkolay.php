@@ -18,6 +18,9 @@ class PayNKolayClient
     const RESPONSE_SUCCESS = '2';
     const RESPONSE_ERROR   = '0';
 
+    /** ISO 4217 numeric codes accepted in currencyCode; the gateway charges TRY when it is omitted. */
+    const CURRENCY_NUMBERS = ['TRY' => '949', 'USD' => '840', 'EUR' => '978'];
+
     private $sx;
     private $sxList;
     private $sxCancel;
@@ -349,6 +352,19 @@ class PayNKolayClient
     }
 
     // ─── Utilities ───────────────────────────────────────────────────────────────
+
+    /**
+     * Map an ISO 4217 alpha code (e.g. an OpenCart currency code) to the numeric
+     * currencyCode the gateway expects. Returns '' for unsupported currencies.
+     */
+    public static function currencyNumber(string $isoCode): string
+    {
+        $isoCode = strtoupper(trim($isoCode));
+        if ($isoCode === 'TL') {
+            $isoCode = 'TRY';
+        }
+        return self::CURRENCY_NUMBERS[$isoCode] ?? '';
+    }
 
     /**
      * Format amount to exactly 2 decimal places.
