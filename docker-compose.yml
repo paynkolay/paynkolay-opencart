@@ -20,50 +20,6 @@ services:
       - ./docker/init.sql:/docker-entrypoint-initdb.d/init.sql
 
   # ──────────────────────────────────────────────
-  # OpenCart 2.0.3.1 — http://localhost:8020
-  # ──────────────────────────────────────────────
-  opencart20:
-    build:
-      context: .
-      dockerfile: docker/opencart-2.0/Dockerfile
-    ports:
-      - '8020:80'
-    volumes:
-      - ./opencart-2.0/admin/controller/payment:/var/www/html/admin/controller/payment
-      - ./opencart-2.0/admin/language/english/payment:/var/www/html/admin/language/english/payment
-      - ./opencart-2.0/admin/view/template/extension/payment:/var/www/html/admin/view/template/extension/payment
-      - ./opencart-2.0/admin/view/image/payment:/var/www/html/admin/view/image/payment
-      - ./opencart-2.0/catalog/controller/payment:/var/www/html/catalog/controller/payment
-      - ./opencart-2.0/catalog/language/english/payment:/var/www/html/catalog/language/english/payment
-      - ./opencart-2.0/catalog/model/payment:/var/www/html/catalog/model/payment
-      - ./opencart-2.0/catalog/view/theme/default/template/payment:/var/www/html/catalog/view/theme/default/template/payment
-      - ./opencart-2.0/system/library/paynkolay.php:/var/www/html/system/library/paynkolay.php
-    depends_on:
-      - db
-
-  # ──────────────────────────────────────────────
-  # OpenCart 2.3.0.2 — http://localhost:8023
-  # ──────────────────────────────────────────────
-  opencart23:
-    build:
-      context: .
-      dockerfile: docker/opencart-2.3/Dockerfile
-    ports:
-      - '8023:80'
-    volumes:
-      - ./opencart-2.3/admin/controller/extension/payment:/var/www/html/admin/controller/extension/payment
-      - ./opencart-2.3/admin/language/en-gb/extension/payment:/var/www/html/admin/language/en-gb/extension/payment
-      - ./opencart-2.3/admin/view/template/extension/payment:/var/www/html/admin/view/template/extension/payment
-      - ./opencart-2.3/admin/view/image/payment:/var/www/html/admin/view/image/payment
-      - ./opencart-2.3/catalog/controller/extension/payment:/var/www/html/catalog/controller/extension/payment
-      - ./opencart-2.3/catalog/language/en-gb/extension/payment:/var/www/html/catalog/language/en-gb/extension/payment
-      - ./opencart-2.3/catalog/model/extension/payment:/var/www/html/catalog/model/extension/payment
-      - ./opencart-2.3/catalog/view/theme/default/extension/payment:/var/www/html/catalog/view/theme/default/template/extension/payment
-      - ./opencart-2.3/system/library/paynkolay.php:/var/www/html/system/library/paynkolay.php
-    depends_on:
-      - db
-
-  # ──────────────────────────────────────────────
   # OpenCart 3.0.3.9 — http://localhost:8030
   # ──────────────────────────────────────────────
   opencart3x:

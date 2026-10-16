@@ -3,6 +3,9 @@ if (!defined('VERSION')) exit;
 
 class ControllerExtensionPaymentNkolayPos extends Controller
 {
+    /** Order status of an order created by checkout/confirm but not yet paid. */
+    const ORDER_STATUS_MISSING = 0;
+
     public function index()
     {
         $client = $this->getClient();
@@ -23,14 +26,20 @@ class ControllerExtensionPaymentNkolayPos extends Controller
             return '';
         }
 
-        $amount = $this->currency->format(
-            $order['total'], $order['currency_code'], $order['currency_value'], false
-        );
+        $amount = PayNKolayClient::formatAmount($this->orderAmount($order));
 
         $callbackUrl = $this->url->link('extension/payment/nkolaypos/callback', '', true);
+        $clientRefCode = PayNKolayClient::buildClientRefCode('Opencart3x', $order['order_id']);
+
+        // Remember what we ask the gateway to charge; the callback is checked against this row.
+        $this->load->model('extension/payment/nkolaypos');
+        $this->model_extension_payment_nkolaypos->ensureTable();
+        $this->model_extension_payment_nkolaypos->addPayment(
+            $order['order_id'], $clientRefCode, PayNKolayClient::toMinorUnits($amount), $order['currency_code']
+        );
 
         $formData = $client->buildRedirectFormData([
-            'clientRefCode' => PayNKolayClient::buildClientRefCode('Opencart3x', $this->session->data['order_id']),
+            'clientRefCode' => $clientRefCode,
             'amount'        => $amount,
             'currencyCode'  => $currencyNumber,
             'successUrl'    => $callbackUrl,
@@ -47,56 +56,165 @@ class ControllerExtensionPaymentNkolayPos extends Controller
         return $this->load->view('extension/payment/nkolaypos', $data);
     }
 
+    /**
+     * successUrl / failUrl handler. The POST comes through the customer's browser, so
+     * every field is untrusted until the hash is verified, and even then
+     * CLIENT_REFERENCE_CODE is unsigned: it only selects the payment row we stored in
+     * index(), and the order id, amount and currency are taken from that row and the order.
+     * Any failed check makes no order change and shows a fixed message.
+     */
     public function callback()
     {
         $client   = $this->getClient();
         $postData = $this->request->post;
 
-        // Verify hash
+        $this->load->model('checkout/order');
+        $this->load->model('extension/payment/nkolaypos');
+        $payments = $this->model_extension_payment_nkolaypos;
+        $payments->ensureTable();
+
         if (!$client->verifyCallback($postData)) {
-            $this->session->data['error'] = 'Hash dogrulama hatasi.';
-            $this->response->redirect($this->url->link('checkout/cart'));
+            $this->reject('invalid hash', $postData);
             return;
         }
 
-        $orderId = PayNKolayClient::extractOrderId($postData['CLIENT_REFERENCE_CODE'] ?? '');
+        $clientRefCode = isset($postData['CLIENT_REFERENCE_CODE']) && is_string($postData['CLIENT_REFERENCE_CODE']) ? $postData['CLIENT_REFERENCE_CODE'] : '';
+        $referenceCode = isset($postData['REFERENCE_CODE']) && is_string($postData['REFERENCE_CODE']) ? trim($postData['REFERENCE_CODE']) : '';
 
-        // Non-3D: direct result
-        if (!PayNKolayClient::is3D($postData)) {
-            if (PayNKolayClient::isSuccess($postData)) {
-                $this->confirmOrder($orderId);
-                $this->response->redirect($this->url->link('checkout/success', '', true));
-            } else {
-                $this->session->data['error'] = $postData['RESPONSE_DATA'] ?? 'Odeme basarisiz.';
-                $this->response->redirect($this->url->link('checkout/cart'));
-            }
+        $payment = $payments->getPaymentByClientRef($clientRefCode);
+        if (!$payment) {
+            $this->reject('unknown CLIENT_REFERENCE_CODE', $postData);
             return;
         }
 
-        // 3D: complete the payment
-        if (PayNKolayClient::isSuccess($postData)) {
-            $result = $client->completePayment($postData['REFERENCE_CODE']);
-
-            if (($result->RESPONSE_CODE ?? '') == PayNKolayClient::RESPONSE_SUCCESS) {
-                $this->confirmOrder($orderId);
-                $this->response->redirect($this->url->link('checkout/success', '', true));
-            } else {
-                $this->session->data['error'] = $result->RESPONSE_DATA ?? 'Odeme tamamlanamadi.';
-                $this->response->redirect($this->url->link('checkout/cart'));
-            }
-        } else {
-            $this->session->data['error'] = $postData['RESPONSE_DATA'] ?? 'Odeme basarisiz.';
-            $this->response->redirect($this->url->link('checkout/cart'));
+        if (!PayNKolayClient::isSuccess($postData)) {
+            // Declined: leave the order untouched so the customer can retry.
+            $this->reject('declined', $postData, 'Odeme basarisiz.');
+            return;
         }
+
+        if ($referenceCode === '' || strlen($referenceCode) > 64) {
+            $this->reject('missing REFERENCE_CODE', $postData);
+            return;
+        }
+
+        // REFERENCE_CODE is single-use: a replay of this same paid callback is fine,
+        // any other reuse is rejected.
+        $used = $payments->getPaymentByReference($referenceCode);
+        if ($used) {
+            if ($used['payment_id'] == $payment['payment_id'] && $used['status'] == 'paid') {
+                $this->response->redirect($this->url->link('checkout/success', '', true));
+                return;
+            }
+            $this->reject('REFERENCE_CODE already used', $postData);
+            return;
+        }
+
+        $order = $this->model_checkout_order->getOrder($payment['order_id']);
+        $expected = $this->expectedMinor($order, $payment);
+        if ($expected === null) {
+            $this->reject('order not awaiting this payment', $postData);
+            return;
+        }
+
+        if (!$this->currencyOk($postData, $order)) {
+            $this->reject('currency mismatch', $postData);
+            return;
+        }
+
+        // An empty signed amount is tolerated only on a 2-step 3D callback; completePayment's
+        // amount is checked below in that case.
+        $authorized = PayNKolayClient::toMinorUnits(isset($postData['AUTHORIZATION_AMOUNT']) ? $postData['AUTHORIZATION_AMOUNT'] : '');
+        $captured = PayNKolayClient::isPaymentSuccessful($postData);
+        if (($authorized === null && ($captured || !PayNKolayClient::is3D($postData))) || ($authorized !== null && $authorized < $expected)) {
+            $this->reject('amount below order total', $postData);
+            return;
+        }
+
+        if (!$payments->claimPayment($payment['payment_id'], $referenceCode)) {
+            $this->reject('payment already processed', $postData);
+            return;
+        }
+
+        if (!$captured) {
+            // RESPONSE_CODE=2 without a provision code: non-3D is not a payment; 3D with
+            // AUTO_COMPLETE off still needs the server-side CompletePayment call.
+            $result = PayNKolayClient::is3D($postData) ? (array) $client->completePayment($referenceCode) : [];
+            $completedAmount = PayNKolayClient::toMinorUnits(isset($result['AUTHORIZATION_AMOUNT']) ? $result['AUTHORIZATION_AMOUNT'] : '');
+            $completedAmount = $completedAmount === null ? $authorized : $completedAmount;
+            if (!PayNKolayClient::isPaymentSuccessful($result)
+                || (isset($result['REFERENCE_CODE']) && (string) $result['REFERENCE_CODE'] !== '' && (string) $result['REFERENCE_CODE'] !== $referenceCode)
+                || $completedAmount === null || $completedAmount < $expected) {
+                $payments->setPaymentStatus($payment['payment_id'], 'failed');
+                $this->reject('payment not completed', $postData, 'Odeme tamamlanamadi.');
+                return;
+            }
+        }
+
+        $payments->setPaymentStatus($payment['payment_id'], 'paid');
+        $this->model_checkout_order->addOrderHistory(
+            $payment['order_id'],
+            $this->config->get('payment_nkolaypos_order_status_id'),
+            'paynkolay REFERENCE_CODE: ' . $referenceCode
+        );
+        $this->response->redirect($this->url->link('checkout/success', '', true));
     }
 
-    private function confirmOrder(string $orderId): void
+    /**
+     * Amount (in minor units) the callback must at least authorize, or null when the
+     * order is not an unpaid order of this payment method matching the stored attempt.
+     * Takes the larger of the amount sent and the current order total, so editing
+     * the order after the form was rendered cannot lower what has to be paid.
+     */
+    private function expectedMinor($order, array $payment)
     {
-        $this->load->model('checkout/order');
-        $this->model_checkout_order->addOrderHistory(
-            $orderId,
-            $this->config->get('payment_nkolaypos_order_status_id')
-        );
+        if (!$order || (int) $order['order_id'] !== (int) $payment['order_id']) {
+            return null;
+        }
+        if ($order['payment_code'] !== 'nkolaypos' || $order['currency_code'] !== $payment['currency_code']) {
+            return null;
+        }
+        $status = (int) $order['order_status_id'];
+        if ($status !== self::ORDER_STATUS_MISSING && $status !== (int) $this->config->get('config_order_status_id')) {
+            return null;
+        }
+        $current = PayNKolayClient::toMinorUnits(PayNKolayClient::formatAmount($this->orderAmount($order)));
+        if ($current === null || $current <= 0) {
+            return null;
+        }
+
+        return max($current, (int) $payment['amount_minor']);
+    }
+
+    /**
+     * With a v2 hash the signed CURRENCY_CODE must be the order currency. Without one
+     * the currency is unsigned, so only TRY (the gateway default) orders are accepted.
+     */
+    private function currencyOk(array $postData, array $order)
+    {
+        $currency = isset($postData['CURRENCY_CODE']) ? $postData['CURRENCY_CODE'] : '';
+        if (PayNKolayClient::hasV2Hash($postData) && $currency !== '') {
+            return PayNKolayClient::currencyMatches($currency, $order['currency_code']);
+        }
+
+        return PayNKolayClient::currencyNumber($order['currency_code']) === '949';
+    }
+
+    private function orderAmount(array $order)
+    {
+        return (string) $this->currency->format($order['total'], $order['currency_code'], $order['currency_value'], false);
+    }
+
+    /**
+     * Log the reason and send the customer back to the cart with a fixed message.
+     * Gateway text (RESPONSE_DATA) is never shown: it is unsigned and attacker-controlled.
+     */
+    private function reject($reason, array $postData, $message = 'Odeme dogrulanamadi.')
+    {
+        $ref = isset($postData['CLIENT_REFERENCE_CODE']) && is_string($postData['CLIENT_REFERENCE_CODE']) ? $postData['CLIENT_REFERENCE_CODE'] : '';
+        $this->log->write('paynkolay callback rejected: ' . $reason . ' (CLIENT_REFERENCE_CODE=' . substr($ref, 0, 128) . ')');
+        $this->session->data['error'] = $message;
+        $this->response->redirect($this->url->link('checkout/cart'));
     }
 
     private function getClient(): PayNKolayClient

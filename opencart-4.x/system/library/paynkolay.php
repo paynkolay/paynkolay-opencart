@@ -3,14 +3,15 @@
  * paynkolay Payment Gateway PHP SDK
  *
  * Single-file client for the paynkolay virtual POS API.
- * Uses hashDatav2 (SHA-512, pipe-separated) for all hash operations.
+ * Requests are signed with hashDatav2 (SHA-512, pipe-separated); callbacks are
+ * verified with hashDataV2 (v1 hashData only when the gateway sends no v2 field).
  *
  * @see https://paynkolay.com.tr/entegrasyon
  */
 class PayNKolayClient
 {
     /** Plugin release version; keep in sync with the GitHub release tag. */
-    const PLUGIN_VERSION = '1.1.0';
+    const PLUGIN_VERSION = '1.2.0';
 
     const PROD_BASE_URL = 'https://paynkolay.nkolayislem.com.tr';
     const TEST_BASE_URL = 'https://paynkolaytest.nkolayislem.com.tr';
@@ -208,34 +209,86 @@ class PayNKolayClient
 
     // ─── Callback verification ───────────────────────────────────────────────────
 
+    /** Signed callback fields, in hash order (v2 appends CURRENCY_CODE). */
+    const CALLBACK_HASH_FIELDS = [
+        'MERCHANT_NO', 'REFERENCE_CODE', 'AUTH_CODE', 'RESPONSE_CODE',
+        'USE_3D', 'RND', 'INSTALLMENT', 'AUTHORIZATION_AMOUNT',
+    ];
+
     /**
-     * Verify the hash from a paynkolay callback (POST to successUrl/failUrl).
+     * Verify the hash of a paynkolay callback (POST to successUrl/failUrl).
      *
-     * Hash: MERCHANT_NO|REFERENCE_CODE|AUTH_CODE|RESPONSE_CODE|USE_3D|RND|INSTALLMENT|AUTHORIZATION_AMOUNT
+     * v2 (hashDataV2; the misspelling hashDatav2 is accepted too):
+     *   base64(SHA-512(MERCHANT_NO|REFERENCE_CODE|AUTH_CODE|RESPONSE_CODE|USE_3D|RND|INSTALLMENT|AUTHORIZATION_AMOUNT|CURRENCY_CODE|secret))
+     * v1 (hashData, only used when no v2 field is posted at all):
+     *   base64(SHA-1(MERCHANT_NO . REFERENCE_CODE . AUTH_CODE . RESPONSE_CODE . USE_3D . RND . INSTALLMENT . AUTHORIZATION_AMOUNT . secret))
+     *
+     * A v2 field that is present but wrong is rejected with no fallback to v1 (no downgrade).
+     * Neither hash covers CLIENT_REFERENCE_CODE: callers must treat it as an untrusted lookup key.
      */
     public function verifyCallback(array $post): bool
     {
-        $computed = $this->computeHash([
-            $post['MERCHANT_NO'] ?? '',
-            $post['REFERENCE_CODE'] ?? '',
-            $post['AUTH_CODE'] ?? '',
-            $post['RESPONSE_CODE'] ?? '',
-            $post['USE_3D'] ?? '',
-            $post['RND'] ?? '',
-            $post['INSTALLMENT'] ?? '',
-            $post['AUTHORIZATION_AMOUNT'] ?? '',
-        ]);
+        if (!is_string($this->secretKey) || $this->secretKey === '') {
+            return false;
+        }
 
-        $received = $post['hashDatav2'] ?? $post['hashData'] ?? '';
+        $fields = [];
+        foreach (self::CALLBACK_HASH_FIELDS as $name) {
+            $value = isset($post[$name]) ? $post[$name] : '';
+            if (!is_scalar($value)) {
+                return false;
+            }
+            $fields[] = (string) $value;
+        }
+
+        if (self::hasV2Hash($post)) {
+            $received = isset($post['hashDataV2']) ? $post['hashDataV2'] : $post['hashDatav2'];
+            $currency = isset($post['CURRENCY_CODE']) ? $post['CURRENCY_CODE'] : '';
+            if (!is_string($received) || $received === '' || !is_scalar($currency)) {
+                return false;
+            }
+            $fields[] = (string) $currency;
+            return hash_equals($this->computeHash($fields), $received);
+        }
+
+        $received = isset($post['hashData']) ? $post['hashData'] : '';
+        if (!is_string($received) || $received === '') {
+            return false;
+        }
+        $computed = base64_encode(sha1(implode('', $fields) . $this->secretKey, true));
         return hash_equals($computed, $received);
     }
 
     /**
-     * Check if callback response indicates success.
+     * Whether the callback carries a v2 hash field (either spelling).
+     */
+    public static function hasV2Hash(array $post): bool
+    {
+        return array_key_exists('hashDataV2', $post) || array_key_exists('hashDatav2', $post);
+    }
+
+    /**
+     * Check if callback response indicates success (RESPONSE_CODE only).
+     * Use isPaymentSuccessful() to decide whether money was actually captured.
      */
     public static function isSuccess(array $post): bool
     {
         return ($post['RESPONSE_CODE'] ?? '') == self::RESPONSE_SUCCESS;
+    }
+
+    /**
+     * A payment is captured only when RESPONSE_CODE is 2 AND AUTH_CODE holds a real
+     * provision code (not empty, "0" or "00"). Accepts a callback array or an API response.
+     *
+     * @param array|object $result
+     */
+    public static function isPaymentSuccessful($result): bool
+    {
+        $result = (array) $result;
+        $code = isset($result['RESPONSE_CODE']) && is_scalar($result['RESPONSE_CODE']) ? (string) $result['RESPONSE_CODE'] : '';
+        $auth = isset($result['AUTH_CODE']) && is_scalar($result['AUTH_CODE']) ? trim((string) $result['AUTH_CODE']) : '';
+
+        return $code === self::RESPONSE_SUCCESS && !in_array($auth, ['', '0', '00'], true);
     }
 
     /**
@@ -244,6 +297,51 @@ class PayNKolayClient
     public static function is3D(array $post): bool
     {
         return ($post['USE_3D'] ?? 'false') !== 'false';
+    }
+
+    /**
+     * Convert a gateway amount ("870.00", "870,5", "870") to integer minor units (87000).
+     * Returns null when the value is not a plain non-negative decimal or carries
+     * non-zero digits below the second decimal place. Never goes through float.
+     *
+     * @param mixed $amount
+     * @return int|null
+     */
+    public static function toMinorUnits($amount)
+    {
+        if (!is_scalar($amount)) {
+            return null;
+        }
+        if (!preg_match('/^(\d{1,15})(?:[.,](\d+))?$/', trim((string) $amount), $m)) {
+            return null;
+        }
+        $fraction = isset($m[2]) ? $m[2] : '';
+        if (strlen($fraction) > 2 && trim(substr($fraction, 2), '0') !== '') {
+            return null;
+        }
+        $fraction = str_pad(substr($fraction, 0, 2), 2, '0');
+
+        return (int) $m[1] * 100 + (int) $fraction;
+    }
+
+    /**
+     * Whether a callback CURRENCY_CODE (numeric "949" or alpha "TRY") denotes the
+     * same currency as an ISO 4217 alpha code such as an OpenCart order currency.
+     *
+     * @param mixed $callbackCurrency
+     */
+    public static function currencyMatches($callbackCurrency, string $isoCode): bool
+    {
+        if (!is_scalar($callbackCurrency)) {
+            return false;
+        }
+        $expected = self::currencyNumber($isoCode);
+        $received = trim((string) $callbackCurrency);
+        if (!ctype_digit($received)) {
+            $received = self::currencyNumber($received);
+        }
+
+        return $expected !== '' && $received !== '' && $received === $expected;
     }
 
     // ─── Cancel / Refund ─────────────────────────────────────────────────────────

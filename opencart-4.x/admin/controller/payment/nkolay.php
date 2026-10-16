@@ -37,7 +37,7 @@ class Nkolay extends \Opencart\System\Engine\Controller
         $defaults = [
             'payment_nkolaypos_sx'     => '118591467|bScbGDYCtPf7SS1N6PQ6/+58rFhW1WpsWINqvkJFaJlu6bMH2tgPKDQtjeA5vClpzJP24uA0vx7OX53cP3SgUspa4EvYix+1C3aXe++8glUvu9Oyyj3v300p5NP7ro/9K57Zcw==',
             'payment_nkolaypos_secret' => '_YckdxUbv4vrnMUZ6VQsr',
-            'payment_nkolaypos_mode'   => '1',
+            'payment_nkolaypos_mode'   => '0',
         ];
         foreach ($settings as $key) {
             $data[$key] = $this->config->get($key) ?? ($defaults[$key] ?? '');
